@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rag Quilt Calculator</title>
+  <style>
+    :root{
+      --bg:#0b0c10; --card:#12141a; --ink:#e9eef4; --muted:#b6c2cf; --accent:#8bd3dd; --line:#273142; --good:#4ade80; --warn:#f59e0b;
+    }
+    html,body{height:100%}
+    body{margin:0;font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:var(--bg); color:var(--ink)}
+    .wrap{max-width:1100px;margin-inline:auto;padding:24px}
+    h1{font-size:clamp(24px,3vw,34px);margin:0 0 6px}
+    h2{font-size:clamp(18px,2.2vw,22px);margin:20px 0 10px}
+    p.small{color:var(--muted);margin-top:0}
+    .grid{display:grid;gap:14px}
+    @media (min-width:900px){.grid{grid-template-columns:1.1fr 1fr}}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+    input[type="number"], input[type="text"], select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0e1117;color:var(--ink)}
+    input[type="checkbox"]{transform:scale(1.2)}
+    .row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+    table{width:100%;border-collapse:collapse;background:#0e1117;border-radius:10px;overflow:hidden}
+    th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left}
+    th{background:#0f1724}
+    tfoot td{font-weight:700}
+    .btns{display:flex;gap:10px;flex-wrap:wrap}
+    button{appearance:none;border:1px solid var(--line);background:#1b2333;color:var(--ink);padding:10px 14px;border-radius:10px;cursor:pointer}
+    button.primary{background:var(--accent);color:#041014;border-color:transparent;font-weight:700}
+    .muted{color:var(--muted)}
+    .good{color:var(--good)}
+    .warn{color:var(--warn)}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .note{font-size:14px;color:var(--muted)}
+    .kicker{font-weight:700;color:var(--accent)}
+    .right{justify-self:end;text-align:right}
+    .center{text-align:center}
+    details{border:1px dashed var(--line);border-radius:10px;padding:10px}
+    .fab-rows input{max-width:140px}
+    .sticky{position:sticky;top:10px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header style="margin-bottom:14px">
+      <div class="kicker">For Mom ♥</div>
+      <h1>Rag Quilt Calculator</h1>
+      <p class="small">Fast, friendly yardage & layout math for rag quilts. Finished block = cut size − 2× seam allowance. Exposed fringe = seam allowance.</p>
+    </header>
+
+    <div class="grid">
+
+      <!-- INPUTS -->
+      <section class="card" id="inputs">
+        <h2>Inputs</h2>
+        <div class="two">
+          <div>
+            <label>Finished quilt width (in)</label>
+            <input type="number" id="qWidth" value="60" step="0.1" min="1">
+          </div>
+          <div>
+            <label>Finished quilt height (in)</label>
+            <input type="number" id="qHeight" value="72" step="0.1" min="1">
+          </div>
+          <div>
+            <label>Top/Backing CUT square size (in)</label>
+            <input type="number" id="cutSize" value="8" step="0.1" min="1">
+          </div>
+          <div>
+            <label>Seam allowance / fringe depth (in)</label>
+            <input type="number" id="seam" value="0.5" step="0.05" min="0.25">
+          </div>
+        </div>
+
+        <div class="two" style="margin-top:8px">
+          <div>
+            <label>Usable fabric width (WOF) (in)</label>
+            <input type="number" id="wof" value="41" step="0.1" min="20">
+          </div>
+          <div>
+            <label>Round yardage up to nearest (yards)</label>
+            <input type="number" id="roundTo" value="0.125" step="0.125" min="0.125">
+          </div>
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+
+        <h3 style="margin:0 0 10px">Top Fabrics</h3>
+        <div class="note">Set how the top side is distributed by percentage. Shares should add up to 100%.</div>
+        <div class="btns" style="margin:10px 0">
+          <button type="button" onclick="addTopRow()">Add top fabric</button>
+          <button type="button" onclick="resetTop()">Reset</button>
+        </div>
+        <table id="topTable" class="fab-rows">
+          <thead><tr><th>Fabric</th><th class="right">Share %</th><th class="center">Blocks</th><th></th></tr></thead>
+          <tbody></tbody>
+          <tfoot><tr><td class="right">Total</td><td class="right mono" id="topPct">0%</td><td class="center mono" id="topBlocks">0</td><td></td></tr></tfoot>
+        </table>
+
+        <h3 style="margin:16px 0 10px">Backing Fabrics</h3>
+        <div class="note">Same deal for backing. If you use a single backing, set it to 100%.</div>
+        <div class="btns" style="margin:10px 0">
+          <button type="button" onclick="addBackRow()">Add backing fabric</button>
+          <button type="button" onclick="resetBack()">Reset</button>
+        </div>
+        <table id="backTable" class="fab-rows">
+          <thead><tr><th>Fabric</th><th class="right">Share %</th><th class="center">Blocks</th><th></th></tr></thead>
+          <tbody></tbody>
+          <tfoot><tr><td class="right">Total</td><td class="right mono" id="backPct">0%</td><td class="center mono" id="backBlocks">0</td><td></td></tr></tfoot>
+        </table>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+
+        <div class="two">
+          <div>
+            <label><input type="checkbox" id="useMid" checked> Use a middle layer (batting/flannel)</label>
+          </div>
+          <div>
+            <label>Middle layer type</label>
+            <select id="midType">
+              <option value="batting" selected>batting</option>
+              <option value="flannel">flannel</option>
+            </select>
+          </div>
+        </div>
+        <div class="two" style="margin-top:8px">
+          <div>
+            <label>Middle layer CUT size (in) — leave blank for auto</label>
+            <input type="number" id="midCut" placeholder="auto" step="0.1" min="1">
+          </div>
+          <div>
+            <label>Middle layer usable width (in)</label>
+            <input type="number" id="midW" value="45" step="0.1" min="20">
+          </div>
+        </div>
+
+        <div class="btns" style="margin-top:16px">
+          <button class="primary" type="button" onclick="recalc()">Calculate</button>
+          <button type="button" onclick="window.print()">Print</button>
+        </div>
+      </section>
+
+      <!-- RESULTS -->
+      <section class="card sticky" id="results">
+        <h2>Results</h2>
+        <table>
+          <tbody>
+            <tr><td>Finished block size</td><td class="right mono" id="rBlock">–</td></tr>
+            <tr><td>Blocks across × down</td><td class="right mono" id="rGrid">–</td></tr>
+            <tr><td>Total blocks</td><td class="right mono" id="rBlocks">–</td></tr>
+            <tr><td>Approx finished width × height</td><td class="right mono" id="rSize">–</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin:16px 0 8px">Yardage (rounded up)</h3>
+        <table id="yardTable">
+          <thead>
+            <tr><th>Fabric</th><th class="center">Blocks</th><th class="center">Squares / yard</th><th class="right">Yards</th></tr>
+          </thead>
+          <tbody id="yardBody"></tbody>
+        </table>
+
+        <details style="margin-top:12px">
+          <summary>How the math works</summary>
+          <ul class="note">
+            <li>Finished block = cut size − 2× seam allowance.</li>
+            <li>Grid = ceil(quilt width ÷ finished block) × ceil(quilt height ÷ finished block).</li>
+            <li>Squares per yard = floor(usable width ÷ cut size) × floor(36 ÷ cut size).</li>
+            <li>Yardage per fabric = roundUp( blocks ÷ squaresPerYard, to nearest chosen fraction ).</li>
+            <li>Middle layer auto-cut = top cut size − 2× seam allowance (keeps it out of seams).</li>
+          </ul>
+        </details>
+        <p class="note">Real life adds plot twists: prewash, shrinkage, directional prints, plaids, and fussy cutting. Add a safety buffer.</p>
+      </section>
+
+    </div>
+
+    <footer class="note" style="margin-top:18px">Built with love and a calculator. © <span id="yr"></span></footer>
+  </div>
+
+<script>
+  const $ = (q, root=document) => root.querySelector(q);
+  const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
+
+  const topBody = $('#topTable tbody');
+  const backBody = $('#backTable tbody');
+
+  function addRow(tbody, prefix){
+    const i = tbody.children.length + 1;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" placeholder="${prefix} fabric ${i}" value="${prefix} ${i}"></td>
+      <td class="right"><input type="number" step="1" min="0" max="100" value="${i===1? (prefix==='Top'?60:100):40}" aria-label="share percent"></td>
+      <td class="center mono" data-blocks>0</td>
+      <td class="center"><button type="button" onclick="this.closest('tr').remove(); updateShares()">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+    updateShares();
+  }
+
+  function addTopRow(){ addRow(topBody,'Top'); }
+  function addBackRow(){ addRow(backBody,'Back'); }
+  function resetTop(){ topBody.innerHTML=''; addTopRow(); addTopRow(); }
+  function resetBack(){ backBody.innerHTML=''; addBackRow(); }
+
+  function sumPercents(tbody){
+    return $$("input[type='number']", tbody).reduce((a,el)=>a + (+el.value||0), 0);
+  }
+
+  function updateShares(){
+    const topPct = sumPercents(topBody);
+    const backPct = sumPercents(backBody);
+    $('#topPct').textContent = topPct.toFixed(0) + '%';
+    $('#backPct').textContent = backPct.toFixed(0) + '%';
+  }
+
+  function floor(n){ return Math.floor(n + 1e-9); }
+  function ceil(n){ return Math.ceil(n - 1e-9); }
+  function roundUpTo(x, step){ return Math.ceil(x / step) * step; }
+
+  function recalc(){
+    const W = +$('#qWidth').value;
+    const H = +$('#qHeight').value;
+    const CUT = +$('#cutSize').value;
+    const SA = +$('#seam').value;
+    const WOF = +$('#wof').value;
+    const ROUND = +$('#roundTo').value;
+    const useMid = $('#useMid').checked;
+    const midType = $('#midType').value;
+    const midCut = $('#midCut').value === '' ? (CUT - 2*SA) : +$('#midCut').value;
+    const midW = +$('#midW').value;
+
+    const finished = CUT - 2*SA;
+    const cols = Math.max(1, ceil(W / finished));
+    const rows = Math.max(1, ceil(H / finished));
+    const totalBlocks = cols * rows;
+
+    // UI basics
+    $('#rBlock').textContent = finished.toFixed(2) + ' in';
+    $('#rGrid').textContent = `${cols} × ${rows}`;
+    $('#rBlocks').textContent = totalBlocks;
+    $('#rSize').textContent = (cols*finished).toFixed(1) + ' in × ' + (rows*finished).toFixed(1) + ' in';
+
+    // Squares per yard for top/back and middle
+    const sqPerYardTop = Math.max(1, floor(WOF / CUT) * floor(36 / CUT));
+    const sqPerYardMid = Math.max(1, floor(midW / midCut) * floor(36 / midCut));
+
+    // Distribute blocks to fabrics by percent
+    const alloc = [];
+    const topPct = sumPercents(topBody) || 0;
+    const backPct = sumPercents(backBody) || 0;
+
+    // update footer block counts
+    $('#topBlocks').textContent = totalBlocks;
+    $('#backBlocks').textContent = totalBlocks;
+
+    const toRows = (tbody, kind) => $$('#'+tbody.id+' tr').map((tr)=>{
+      const name = $('input[type="text"]', tr).value.trim() || `${kind} fabric`;
+      const pctEl = $('input[type="number"]', tr);
+      const pct = +pctEl.value || 0;
+      const blocks = Math.round(totalBlocks * (pct/100));
+      $('[data-blocks]', tr).textContent = blocks;
+      return {name, pct, blocks};
+    });
+
+    const tops = toRows(topBody, 'Top');
+    const backs = toRows(backBody, 'Back');
+
+    // Yardage rows
+    const yBody = $('#yardBody');
+    yBody.innerHTML = '';
+
+    function addYardageRow(name, blocks, squaresPerYard){
+      const yards = roundUpTo(blocks / Math.max(1, squaresPerYard), ROUND);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${name}</td><td class="center mono">${blocks}</td><td class="center mono">${squaresPerYard}</td><td class="right mono">${yards.toFixed(3)}</td>`;
+      yBody.appendChild(tr);
+    }
+
+    // Warnings if share totals not 100%
+    if (Math.abs(topPct - 100) > 0.5) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="4" class="warn">Top shares total ${topPct.toFixed(0)}%. Yardage uses those proportions anyway.</td>`;
+      yBody.appendChild(tr);
+    }
+
+    tops.forEach(t => addYardageRow(`TOP — ${t.name}`, t.blocks, sqPerYardTop));
+
+    if (Math.abs(backPct - 100) > 0.5) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="4" class="warn">Backing shares total ${backPct.toFixed(0)}%. Yardage uses those proportions anyway.</td>`;
+      yBody.appendChild(tr);
+    }
+
+    backs.forEach(b => addYardageRow(`BACK — ${b.name}`, b.blocks, sqPerYardTop));
+
+    if (useMid){
+      addYardageRow(`MIDDLE — ${midType}`, totalBlocks, sqPerYardMid);
+    }
+  }
+
+  // init
+  resetTop();
+  resetBack();
+  updateShares();
+  recalc();
+  $('#yr').textContent = new Date().getFullYear();
+
+  // live recalc on input changes (debounced)
+  let t; const onChange = () => { clearTimeout(t); t = setTimeout(recalc, 120); };
+  $$('#inputs input, #inputs select').forEach(el => el.addEventListener('input', onChange));
+</script>
+</body>
+</html>
