@@ -2,7 +2,7 @@
 
 A simple, mobile-friendly rag quilt calculator for planning layouts, fabric shares, and yardage — built with love (and math) for my mom.
 
-**Live site:** https://<your-username>.github.io/rag-quilt-calculator/
+**Live site:** https://ginalyncox.github.io/rag-quilt-calculator/
 
 ## Features
 - Finished block math (cut size − 2× seam allowance)
