@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rag Quilt Pricing Calculator</title>
+  <meta name="description" content="Simple pricing tool for rag quilts: materials, labor, overhead, margin, discounts, and tax." />
+  <style>
+    :root{
+      --bg:#f7fafc; --card:#ffffff; --ink:#0b1321; --muted:#5b6b7b; --accent:#0ea5e9; --line:#e3e8ef; --good:#16a34a; --warn:#b45309;
+      --field-bg:#ffffff; --field-border:#cbd5e1; --field-border-focus:#0ea5e9;
+    }
+    [data-theme="dark"]{
+      --bg:#0b0c10; --card:#12141a; --ink:#e9eef4; --muted:#a0a8b3; --accent:#8bd3dd; --line:#273142; --good:#4ade80; --warn:#f59e0b;
+      --field-bg:#0e1117; --field-border:#2a3445; --field-border-focus:#8bd3dd;
+    }
+    html,body{height:100%}
+    body{margin:0;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";background:var(--bg);color:var(--ink)}
+    .wrap{max-width:1100px;margin-inline:auto;padding:20px}
+    h1{font-size:clamp(26px,3.2vw,36px);margin:0 0 6px}
+    h2{font-size:clamp(18px,2.2vw,24px);margin:20px 0 10px}
+    p.small{color:var(--muted);margin-top:0}
+    .grid{display:grid;gap:16px}
+    @media (min-width:960px){.grid{grid-template-columns:1.05fr 1fr}}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    .two{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width:700px){.two{grid-template-columns:1fr 1fr}}
+    label{display:block;font-weight:600;font-size:14px;margin:2px 0 6px}
+    input[type="number"],input[type="text"],select{
+      width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--field-border);background:var(--field-bg);color:var(--ink);outline:none
+    }
+    input:focus,select:focus{border-color:var(--field-border-focus);box-shadow:0 0 0 3px color-mix(in srgb, var(--field-border-focus) 20%, transparent)}
+    table{width:100%;border-collapse:separate;border-spacing:0;background:var(--field-bg);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    th,td{padding:12px;border-bottom:1px solid var(--line);text-align:left}
+    th{background:color-mix(in srgb, var(--card) 80%, var(--line) 20%)}
+    tfoot td{font-weight:700}
+    .btns{display:flex;gap:10px;flex-wrap:wrap}
+    button{appearance:none;border:1px solid var(--line);background:color-mix(in srgb, var(--card) 70%, var(--line) 30%);color:var(--ink);padding:10px 14px;border-radius:10px;cursor:pointer}
+    button.primary{background:var(--accent);color:#041014;border-color:transparent;font-weight:700}
+    .right{text-align:right}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .note{color:var(--muted);font-size:14px}
+    .sticky{position:sticky;top:10px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <div>
+        <h1>Rag Quilt Pricing Calculator</h1>
+        <p class="small">Materials + labor + overhead → target margin → suggested price. No defaults; you fill the blanks.</p>
+      </div>
+      <div>
+        <button id="themeToggle" class="primary" type="button">Theme</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card" id="inputs">
+        <h2>Inputs</h2>
+
+        <h3>Materials</h3>
+        <table id="matTable">
+          <thead>
+            <tr><th>Item</th><th class="right">Qty</th><th>Unit</th><th class="right">Unit price</th><th class="right">Total</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr><td colspan="4" class="right">Materials total</td><td class="right mono" id="matTotal">0.00</td><td></td></tr>
+          </tfoot>
+        </table>
+        <div class="btns" style="margin:8px 0 14px">
+          <button type="button" onclick="addMat()">Add item</button>
+          <button type="button" onclick="seedFabricRows()">Quick-add: Top/Back/Middle</button>
+          <button type="button" onclick="clearMats()">Clear</button>
+        </div>
+        <p class="note">Tip: add fabric as yards (e.g., 3 yd @ $12.99), batting/flannel, thread, needles, buttons/snaps, etc.</p>
+
+        <div class="two" style="margin-top:16px">
+          <div>
+            <label>Labor hours</label>
+            <input id="laborHrs" type="number" step="0.25" min="0" placeholder="e.g., 8">
+          </div>
+          <div>
+            <label>Hourly rate ($/hr)</label>
+            <input id="laborRate" type="number" step="0.5" min="0" placeholder="e.g., 20">
+          </div>
+        </div>
+
+        <div class="two" style="margin-top:8px">
+          <div>
+            <label>Overhead (%) on materials + labor</label>
+            <input id="overheadPct" type="number" step="1" min="0" placeholder="e.g., 10">
+          </div>
+          <div>
+            <label>Desired profit margin (%)</label>
+            <input id="marginPct" type="number" step="1" min="0" max="95" placeholder="e.g., 40">
+          </div>
+        </div>
+
+        <div class="two" style="margin-top:8px">
+          <div>
+            <label>Rounding (to nearest)</label>
+            <select id="roundTo">
+              <option value="1">$1</option>
+              <option value="5">$5</option>
+              <option value="10">$10</option>
+            </select>
+          </div>
+          <div>
+            <label>Friends & family discount (%)</label>
+            <input id="discountPct" type="number" step="1" min="0" max="90" placeholder="e.g., 15">
+          </div>
+        </div>
+
+        <div class="two" style="margin-top:8px">
+          <div>
+            <label>Sales tax to charge buyer (%) — optional</label>
+            <input id="taxPct" type="number" step="0.25" min="0" placeholder="e.g., 7">
+          </div>
+          <div>
+            <label>Blocks across × down (optional for per-block price)</label>
+            <div class="two"><input id="cols" type="number" min="1" step="1" placeholder="e.g., 12"><input id="rows" type="number" min="1" step="1" placeholder="e.g., 12"></div>
+          </div>
+        </div>
+
+        <div class="btns" style="margin-top:16px">
+          <button class="primary" type="button" onclick="recalc()">Calculate</button>
+          <button type="button" onclick="copyLink()">Copy share link</button>
+          <button type="button" onclick="window.print()">Print</button>
+        </div>
+      </section>
+
+      <section class="card sticky" id="results" aria-live="polite">
+        <h2>Results</h2>
+        <table>
+          <tbody>
+            <tr><td>Materials</td><td class="right mono" id="rMat">—</td></tr>
+            <tr><td>Labor</td><td class="right mono" id="rLabor">—</td></tr>
+            <tr><td>Overhead</td><td class="right mono" id="rOver">—</td></tr>
+            <tr><td><strong>COGS (materials + labor + overhead)</strong></td><td class="right mono" id="rCOGS">—</td></tr>
+            <tr><td>Target margin</td><td class="right mono" id="rMargin">—</td></tr>
+            <tr><td><strong>Suggested price (pre-discount, pre-tax)</strong></td><td class="right mono" id="rPrice">—</td></tr>
+            <tr><td>Friends & family price</td><td class="right mono" id="rDisc">—</td></tr>
+            <tr><td>Total with sales tax</td><td class="right mono" id="rTaxed">—</td></tr>
+            <tr><td>Per-block price (optional)</td><td class="right mono" id="rPerBlock">—</td></tr>
+          </tbody>
+        </table>
+        <p class="note">Formula: price = COGS / (1 − margin%). Overhead = overhead% × (materials + labor). Sales tax applies to buyer total; it is not profit.</p>
+      </section>
+    </div>
+
+    <footer class="note" style="margin-top:18px">Built to keep pricing sane. © <span id="yr"></span></footer>
+  </div>
+
+<script>
+  const $ = (q, root=document) => root.querySelector(q);
+  const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
+  const params = new URLSearchParams(location.search);
+
+  // THEME
+  const root = document.documentElement;
+  const savedTheme = localStorage.getItem('rq-theme');
+  if (savedTheme === 'dark') root.setAttribute('data-theme','dark');
+  $('#themeToggle').addEventListener('click', ()=>{
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    if (isDark) root.removeAttribute('data-theme'); else root.setAttribute('data-theme','dark');
+    localStorage.setItem('rq-theme', isDark ? 'light' : 'dark');
+  });
+
+  // MATERIAL ROWS
+  const matBody = $('#matTable tbody');
+  function money(n){ return (isFinite(n)? n : 0).toFixed(2); }
+  function addMatRow(name='', qty='', unit='yd', unitPrice=''){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" placeholder="Fabric / batting / thread" value="${name}"></td>
+      <td class="right"><input type="number" min="0" step="0.01" placeholder="0" value="${qty}"></td>
+      <td><select><option value="yd" ${unit==='yd'?'selected':''}>yd</option><option value="ea" ${unit==='ea'?'selected':''}>ea</option></select></td>
+      <td class="right"><input type="number" min="0" step="0.01" placeholder="0.00" value="${unitPrice}"></td>
+      <td class="right mono" data-line>0.00</td>
+      <td class="right"><button type="button" onclick="this.closest('tr').remove(); recalc()">✕</button></td>`;
+    matBody.appendChild(tr);
+  }
+  function addMat(){ addMatRow(); }
+  function clearMats(){ matBody.innerHTML=''; recalc(); }
+  function seedFabricRows(){
+    if (matBody.children.length) return; // keep blank by default
+    addMatRow('Top fabrics (total)', '', 'yd', '');
+    addMatRow('Backing fabric', '', 'yd', '');
+    addMatRow('Middle layer (batting/flannel)', '', 'yd', '');
+    addMatRow('Thread/needles', '1', 'ea', '');
+  }
+
+  // SHARE LINK
+  function makeQuery(){
+    const p = new URLSearchParams();
+    // materials
+    const names = $$('#matTable tbody tr td:first-child input').map(i=>encodeURIComponent(i.value.trim())).join('|');
+    const qtys  = $$('#matTable tbody tr td:nth-child(2) input').map(i=>i.value).join('|');
+    const units = $$('#matTable tbody tr td:nth-child(3) select').map(s=>s.value).join('|');
+    const prices= $$('#matTable tbody tr td:nth-child(4) input').map(i=>i.value).join('|');
+    if (names) { p.set('n',names); p.set('q',qtys); p.set('u',units); p.set('p',prices); }
+    // numbers
+    const ids = ['laborHrs','laborRate','overheadPct','marginPct','roundTo','discountPct','taxPct','cols','rows'];
+    ids.forEach(id=>{ const v = $('#'+id).value; if (v!=='' && v!=null) p.set(id, v); });
+    return p.toString();
+  }
+  async function copyLink(){
+    const url = location.origin + location.pathname + '?' + makeQuery();
+    try{ await navigator.clipboard.writeText(url); alert('Link copied!'); }
+    catch{ prompt('Copy this link:', url); }
+  }
+  function setFromQuery(){
+    // materials
+    if (params.has('n')){
+      const names = params.get('n').split('|').map(decodeURIComponent);
+      const qtys  = params.get('q').split('|');
+      const units = params.get('u').split('|');
+      const prices= params.get('p').split('|');
+      names.forEach((name,i)=> addMatRow(name, qtys[i]||'', units[i]||'yd', prices[i]||''));
+    }
+    // numbers
+    const ids = ['laborHrs','laborRate','overheadPct','marginPct','roundTo','discountPct','taxPct','cols','rows'];
+    ids.forEach(id=>{ if (params.has(id)) $('#'+id).value = params.get(id); });
+  }
+
+  function recalc(){
+    // materials
+    let matTotal = 0;
+    $$('#matTable tbody tr').forEach(tr=>{
+      const qty = parseFloat(tr.children[1].querySelector('input').value)||0;
+      const unitPrice = parseFloat(tr.children[3].querySelector('input').value)||0;
+      const line = qty * unitPrice;
+      tr.querySelector('[data-line]').textContent = money(line);
+      matTotal += line;
+    });
+    $('#matTotal').textContent = money(matTotal);
+
+    const laborHrs = parseFloat($('#laborHrs').value)||0;
+    const laborRate = parseFloat($('#laborRate').value)||0;
+    const labor = laborHrs * laborRate;
+
+    const overheadPct = (parseFloat($('#overheadPct').value)||0) / 100;
+    const overhead = (matTotal + labor) * overheadPct;
+
+    const cogs = matTotal + labor + overhead;
+
+    const marginPct = (parseFloat($('#marginPct').value)||0) / 100;
+    const priceRaw = marginPct >= 0.95 ? cogs : (cogs / (1 - marginPct));
+
+    const roundTo = parseFloat($('#roundTo').value)||1;
+    const price = Math.round(priceRaw / roundTo) * roundTo;
+
+    const discountPct = (parseFloat($('#discountPct').value)||0)/100;
+    const discPrice = price * (1 - discountPct);
+
+    const taxPct = (parseFloat($('#taxPct').value)||0)/100;
+    const taxed = discPrice * (1 + taxPct);
+
+    const cols = parseInt($('#cols').value)||0;
+    const rows = parseInt($('#rows').value)||0;
+    const perBlock = (cols>0 && rows>0) ? (discPrice / (cols*rows)) : 0;
+
+    // write
+    $('#rMat').textContent = '$'+money(matTotal);
+    $('#rLabor').textContent = '$'+money(labor);
+    $('#rOver').textContent = '$'+money(overhead);
+    $('#rCOGS').textContent = '$'+money(cogs);
+    $('#rMargin').textContent = (marginPct*100).toFixed(0) + '%';
+    $('#rPrice').textContent = '$'+money(price);
+    $('#rDisc').textContent = '$'+money(discPrice);
+    $('#rTaxed').textContent = taxPct? '$'+money(taxed) : '—';
+    $('#rPerBlock').textContent = (perBlock? '$'+money(perBlock): '—');
+  }
+
+  // INIT
+  addMat(); // start with one blank row
+  setFromQuery();
+  recalc();
+  $('#yr').textContent = new Date().getFullYear();
+  $$('#inputs input, #inputs select').forEach(el=> el.addEventListener('input', ()=>{ recalc(); }));
+</script>
+</body>
+</html>
