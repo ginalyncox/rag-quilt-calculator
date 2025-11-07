@@ -4,83 +4,137 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Rag Quilt Calculator</title>
+  <meta name="description" content="Plan rag quilt layouts, fabric shares, and yardage. Built with love (and math) for Mom." />
+  <!-- Social preview -->
+  <meta property="og:title" content="Rag Quilt Calculator" />
+  <meta property="og:description" content="Plan rag quilt blocks, fabric shares, and yardage — mobile-friendly and printable." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/cover.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <!-- Favicon (optional add file at assets/favicon.ico) -->
+  <link rel="icon" href="assets/favicon.ico">
   <style>
+    /* LIGHT THEME DEFAULT — with optional dark toggle */
     :root{
-      --bg:#0b0c10; --card:#12141a; --ink:#e9eef4; --muted:#b6c2cf; --accent:#8bd3dd; --line:#273142; --good:#4ade80; --warn:#f59e0b;
+      --bg:#f7fafc; --card:#ffffff; --ink:#0b1321; --muted:#5b6b7b; --accent:#0ea5e9; --line:#e3e8ef; --good:#16a34a; --warn:#b45309;
+      --field-bg:#ffffff; --field-border:#cbd5e1; --field-border-focus:#0ea5e9;
     }
+    [data-theme="dark"]{
+      --bg:#0b0c10; --card:#12141a; --ink:#e9eef4; --muted:#a0a8b3; --accent:#8bd3dd; --line:#273142; --good:#4ade80; --warn:#f59e0b;
+      --field-bg:#0e1117; --field-border:#2a3445; --field-border-focus:#8bd3dd;
+    }
+
     html,body{height:100%}
-    body{margin:0;font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:var(--bg); color:var(--ink)}
-    .wrap{max-width:1100px;margin-inline:auto;padding:24px}
-    h1{font-size:clamp(24px,3vw,34px);margin:0 0 6px}
-    h2{font-size:clamp(18px,2.2vw,22px);margin:20px 0 10px}
+    body{margin:0;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";background:var(--bg);color:var(--ink)}
+    .wrap{max-width:1100px;margin-inline:auto;padding:20px}
+    h1{font-size:clamp(26px,3.2vw,36px);margin:0 0 6px}
+    h2{font-size:clamp(18px,2.2vw,24px);margin:20px 0 10px}
     p.small{color:var(--muted);margin-top:0}
-    .grid{display:grid;gap:14px}
-    @media (min-width:900px){.grid{grid-template-columns:1.1fr 1fr}}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
-    .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
-    input[type="number"], input[type="text"], select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0e1117;color:var(--ink)}
-    input[type="checkbox"]{transform:scale(1.2)}
-    .row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
-    table{width:100%;border-collapse:collapse;background:#0e1117;border-radius:10px;overflow:hidden}
-    th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left}
-    th{background:#0f1724}
+    .grid{display:grid;gap:16px}
+    @media (min-width:900px){.grid{grid-template-columns:1.05fr 1fr}}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+
+    /* INPUTS — better spacing on mobile */
+    .two{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width:700px){.two{grid-template-columns:1fr 1fr}}
+    label{display:block;font-weight:600;font-size:14px;margin:2px 0 6px}
+    input[type="number"],input[type="text"],select{
+      -webkit-appearance:none;appearance:none;box-sizing:border-box;
+      width:100%;
+      padding:12px 14px; /* more padding for chunky tap targets */
+      border-radius:12px;
+      border:1px solid var(--field-border);
+      background:var(--field-bg);color:var(--ink);
+      outline:none;line-height:1.2;
+    }
+    input[type="number"],select{font-size:16px} /* iOS zoom fix */
+    input:focus,select:focus{border-color:var(--field-border-focus);box-shadow:0 0 0 3px color-mix(in srgb, var(--field-border-focus) 20%, transparent)}
+    input[type="checkbox"]{transform:scale(1.15)}
+
+    table{width:100%;border-collapse:separate;border-spacing:0;background:var(--field-bg);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    th,td{padding:12px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+    th{background:color-mix(in srgb, var(--card) 80%, var(--line) 20%)}
     tfoot td{font-weight:700}
+
     .btns{display:flex;gap:10px;flex-wrap:wrap}
-    button{appearance:none;border:1px solid var(--line);background:#1b2333;color:var(--ink);padding:10px 14px;border-radius:10px;cursor:pointer}
+    button{appearance:none;border:1px solid var(--line);background:color-mix(in srgb, var(--card) 70%, var(--line) 30%);color:var(--ink);padding:10px 14px;border-radius:10px;cursor:pointer}
     button.primary{background:var(--accent);color:#041014;border-color:transparent;font-weight:700}
     .muted{color:var(--muted)}
     .good{color:var(--good)}
     .warn{color:var(--warn)}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
     .note{font-size:14px;color:var(--muted)}
     .kicker{font-weight:700;color:var(--accent)}
     .right{justify-self:end;text-align:right}
     .center{text-align:center}
-    details{border:1px dashed var(--line);border-radius:10px;padding:10px}
-    .fab-rows input{max-width:140px}
     .sticky{position:sticky;top:10px}
+    .pill{background:color-mix(in srgb, var(--card) 70%, var(--line) 30%);border:1px solid var(--line);padding:6px 10px;border-radius:999px;cursor:pointer}
+    .preset-bar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 2px}
+    .sr{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+
+    @media print{
+      body{background:#fff;color:#000}
+      .card{border:1px solid #ccc;background:#fff}
+      .sticky{position:static}
+      .btns,.preset-bar,.theme{display:none}
+      a[href]:after{content:""}
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header style="margin-bottom:14px">
-      <div class="kicker">For Mom ♥</div>
-      <h1>Rag Quilt Calculator</h1>
-      <p class="small">Fast, friendly yardage & layout math for rag quilts. Finished block = cut size − 2× seam allowance. Exposed fringe = seam allowance.</p>
+    <header style="margin-bottom:14px; display:flex; align-items:flex-end; justify-content:space-between; gap:10px; flex-wrap:wrap">
+      <div>
+        <div class="kicker">For Mom ♥</div>
+        <h1 style="margin:0">Rag Quilt Calculator</h1>
+        <p class="small" style="margin:4px 0 0">Fast yardage & layout math for rag quilts. Finished block = cut size − 2× seam allowance. Exposed fringe = seam allowance.</p>
+      </div>
+      <div class="theme" style="display:flex; gap:8px; align-items:center">
+        <button type="button" id="themeToggle" class="pill" aria-label="Toggle dark mode">🌙/☀️ Theme</button>
+      </div>
     </header>
 
     <div class="grid">
 
       <!-- INPUTS -->
-      <section class="card" id="inputs">
-        <h2>Inputs</h2>
+      <section class="card" id="inputs" aria-labelledby="inputs-h">
+        <h2 id="inputs-h">Inputs</h2>
+
+        <!-- Presets -->
+        <div class="preset-bar" aria-label="Size presets">
+          <button type="button" class="pill" data-preset="36x45">Baby 36×45</button>
+          <button type="button" class="pill" data-preset="50x60">Throw 50×60</button>
+          <button type="button" class="pill" data-preset="70x90">Twin 70×90</button>
+          <button type="button" class="pill" data-preset="90x95">Queen 90×95</button>
+          <button type="button" class="pill" data-preset="110x95">King 110×95</button>
+        </div>
+
         <div class="two">
           <div>
-            <label>Finished quilt width (in)</label>
+            <label for="qWidth">Finished quilt width (in)</label>
             <input type="number" id="qWidth" value="60" step="0.1" min="1">
           </div>
           <div>
-            <label>Finished quilt height (in)</label>
+            <label for="qHeight">Finished quilt height (in)</label>
             <input type="number" id="qHeight" value="72" step="0.1" min="1">
           </div>
           <div>
-            <label>Top/Backing CUT square size (in)</label>
+            <label for="cutSize">Top/Backing CUT square size (in)</label>
             <input type="number" id="cutSize" value="8" step="0.1" min="1">
           </div>
           <div>
-            <label>Seam allowance / fringe depth (in)</label>
+            <label for="seam">Seam allowance / fringe depth (in)</label>
             <input type="number" id="seam" value="0.5" step="0.05" min="0.25">
           </div>
         </div>
 
         <div class="two" style="margin-top:8px">
           <div>
-            <label>Usable fabric width (WOF) (in)</label>
+            <label for="wof">Usable fabric width (WOF) (in)</label>
             <input type="number" id="wof" value="41" step="0.1" min="20">
           </div>
           <div>
-            <label>Round yardage up to nearest (yards)</label>
+            <label for="roundTo">Round yardage up to nearest (yards)</label>
             <input type="number" id="roundTo" value="0.125" step="0.125" min="0.125">
           </div>
         </div>
@@ -88,7 +142,7 @@
         <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
 
         <h3 style="margin:0 0 10px">Top Fabrics</h3>
-        <div class="note">Set how the top side is distributed by percentage. Shares should add up to 100%.</div>
+        <div class="note">Set how the top is distributed by percentage. Shares should sum to 100% (give or take a percent).</div>
         <div class="btns" style="margin:10px 0">
           <button type="button" onclick="addTopRow()">Add top fabric</button>
           <button type="button" onclick="resetTop()">Reset</button>
@@ -100,7 +154,7 @@
         </table>
 
         <h3 style="margin:16px 0 10px">Backing Fabrics</h3>
-        <div class="note">Same deal for backing. If you use a single backing, set it to 100%.</div>
+        <div class="note">If you use a single backing, set it to 100%.</div>
         <div class="btns" style="margin:10px 0">
           <button type="button" onclick="addBackRow()">Add backing fabric</button>
           <button type="button" onclick="resetBack()">Reset</button>
@@ -118,7 +172,7 @@
             <label><input type="checkbox" id="useMid" checked> Use a middle layer (batting/flannel)</label>
           </div>
           <div>
-            <label>Middle layer type</label>
+            <label for="midType">Middle layer type</label>
             <select id="midType">
               <option value="batting" selected>batting</option>
               <option value="flannel">flannel</option>
@@ -127,23 +181,24 @@
         </div>
         <div class="two" style="margin-top:8px">
           <div>
-            <label>Middle layer CUT size (in) — leave blank for auto</label>
+            <label for="midCut">Middle layer CUT size (in) — leave blank for auto</label>
             <input type="number" id="midCut" placeholder="auto" step="0.1" min="1">
           </div>
           <div>
-            <label>Middle layer usable width (in)</label>
+            <label for="midW">Middle layer usable width (in)</label>
             <input type="number" id="midW" value="45" step="0.1" min="20">
           </div>
         </div>
 
         <div class="btns" style="margin-top:16px">
           <button class="primary" type="button" onclick="recalc()">Calculate</button>
+          <button type="button" onclick="copyLink()">Copy share link</button>
           <button type="button" onclick="window.print()">Print</button>
         </div>
       </section>
 
       <!-- RESULTS -->
-      <section class="card sticky" id="results">
+      <section class="card sticky" id="results" aria-live="polite">
         <h2>Results</h2>
         <table>
           <tbody>
@@ -183,6 +238,7 @@
 <script>
   const $ = (q, root=document) => root.querySelector(q);
   const $$ = (q, root=document) => Array.from(root.querySelectorAll(q));
+  const params = new URLSearchParams(location.search);
 
   const topBody = $('#topTable tbody');
   const backBody = $('#backTable tbody');
@@ -194,7 +250,7 @@
       <td><input type="text" placeholder="${prefix} fabric ${i}" value="${prefix} ${i}"></td>
       <td class="right"><input type="number" step="1" min="0" max="100" value="${i===1? (prefix==='Top'?60:100):40}" aria-label="share percent"></td>
       <td class="center mono" data-blocks>0</td>
-      <td class="center"><button type="button" onclick="this.closest('tr').remove(); updateShares()">✕</button></td>
+      <td class="center"><button type="button" aria-label="remove row" onclick="this.closest('tr').remove(); updateShares(); recalc();">✕</button></td>
     `;
     tbody.appendChild(tr);
     updateShares();
@@ -220,6 +276,81 @@
   function ceil(n){ return Math.ceil(n - 1e-9); }
   function roundUpTo(x, step){ return Math.ceil(x / step) * step; }
 
+  function setFromQuery(){
+    const map = {
+      qWidth:'w', qHeight:'h', cutSize:'cut', seam:'sa', wof:'wof', roundTo:'r', useMid:'mid', midType:'mt', midCut:'mc', midW:'mw'
+    };
+    for (const [id,k] of Object.entries(map)){
+      if (!params.has(k)) continue;
+      const el = document.getElementById(id);
+      if (!el) continue;
+      if (el.type === 'checkbox') el.checked = params.get(k) === '1';
+      else if (el.tagName === 'SELECT') el.value = params.get(k);
+      else el.value = params.get(k);
+    }
+    // fabrics from query (comma lists): top names tn, top pct tp, back names bn, back pct bp
+    if (params.has('tn') && params.has('tp')){
+      topBody.innerHTML='';
+      const names = params.get('tn').split(',');
+      const pcts = params.get('tp').split(',').map(Number);
+      names.forEach((n, i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="text" value="${decodeURIComponent(n)}"></td>
+          <td class="right"><input type="number" step="1" min="0" max="100" value="${pcts[i]||0}"></td>
+          <td class="center mono" data-blocks>0</td>
+          <td class="center"><button type="button" onclick="this.closest('tr').remove(); updateShares(); recalc();">✕</button></td>`;
+        topBody.appendChild(tr);
+      });
+    }
+    if (params.has('bn') && params.has('bp')){
+      backBody.innerHTML='';
+      const names = params.get('bn').split(',');
+      const pcts = params.get('bp').split(',').map(Number);
+      names.forEach((n, i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="text" value="${decodeURIComponent(n)}"></td>
+          <td class="right"><input type="number" step="1" min="0" max="100" value="${pcts[i]||0}"></td>
+          <td class="center mono" data-blocks>0</td>
+          <td class="center"><button type="button" onclick="this.closest('tr').remove(); updateShares(); recalc();">✕</button></td>`;
+        backBody.appendChild(tr);
+      });
+    }
+    updateShares();
+  }
+
+  function makeQuery(){
+    const get = id => document.getElementById(id);
+    const map = {
+      w:get('qWidth').value,
+      h:get('qHeight').value,
+      cut:get('cutSize').value,
+      sa:get('seam').value,
+      wof:get('wof').value,
+      r:get('roundTo').value,
+      mid:get('useMid').checked? '1':'0',
+      mt:get('midType').value,
+      mc:get('midCut').value,
+      mw:get('midW').value,
+    };
+    const tn = $$('#topTable tbody tr input[type="text"]').map(i=>encodeURIComponent(i.value.trim())).join(',');
+    const tp = $$('#topTable tbody tr input[type="number"]').map(i=>i.value).join(',');
+    const bn = $$('#backTable tbody tr input[type="text"]').map(i=>encodeURIComponent(i.value.trim())).join(',');
+    const bp = $$('#backTable tbody tr input[type="number"]').map(i=>i.value).join(',');
+    const p = new URLSearchParams(map);
+    if (tn) p.set('tn', tn); if (tp) p.set('tp', tp);
+    if (bn) p.set('bn', bn); if (bp) p.set('bp', bp);
+    return p.toString();
+  }
+
+  async function copyLink(){
+    const qs = makeQuery();
+    const url = location.origin + location.pathname + '?' + qs;
+    try { await navigator.clipboard.writeText(url); alert('Link copied!'); }
+    catch { prompt('Copy this link:', url); }
+  }
+
   function recalc(){
     const W = +$('#qWidth').value;
     const H = +$('#qHeight').value;
@@ -237,38 +368,14 @@
     const rows = Math.max(1, ceil(H / finished));
     const totalBlocks = cols * rows;
 
-    // UI basics
     $('#rBlock').textContent = finished.toFixed(2) + ' in';
     $('#rGrid').textContent = `${cols} × ${rows}`;
     $('#rBlocks').textContent = totalBlocks;
     $('#rSize').textContent = (cols*finished).toFixed(1) + ' in × ' + (rows*finished).toFixed(1) + ' in';
 
-    // Squares per yard for top/back and middle
     const sqPerYardTop = Math.max(1, floor(WOF / CUT) * floor(36 / CUT));
     const sqPerYardMid = Math.max(1, floor(midW / midCut) * floor(36 / midCut));
 
-    // Distribute blocks to fabrics by percent
-    const alloc = [];
-    const topPct = sumPercents(topBody) || 0;
-    const backPct = sumPercents(backBody) || 0;
-
-    // update footer block counts
-    $('#topBlocks').textContent = totalBlocks;
-    $('#backBlocks').textContent = totalBlocks;
-
-    const toRows = (tbody, kind) => $$('#'+tbody.id+' tr').map((tr)=>{
-      const name = $('input[type="text"]', tr).value.trim() || `${kind} fabric`;
-      const pctEl = $('input[type="number"]', tr);
-      const pct = +pctEl.value || 0;
-      const blocks = Math.round(totalBlocks * (pct/100));
-      $('[data-blocks]', tr).textContent = blocks;
-      return {name, pct, blocks};
-    });
-
-    const tops = toRows(topBody, 'Top');
-    const backs = toRows(backBody, 'Back');
-
-    // Yardage rows
     const yBody = $('#yardBody');
     yBody.innerHTML = '';
 
@@ -279,13 +386,29 @@
       yBody.appendChild(tr);
     }
 
-    // Warnings if share totals not 100%
+    // Build fabric rows and warnings
+    const topPct = sumPercents(topBody) || 0;
+    const backPct = sumPercents(backBody) || 0;
+
+    $('#topBlocks').textContent = totalBlocks;
+    $('#backBlocks').textContent = totalBlocks;
+
+    const rowsFrom = (tbody, tag) => $$('#'+tbody.id+' tr').map((tr)=>{
+      const name = $('input[type="text"]', tr).value.trim() || `${tag} fabric`;
+      const pct = +$('input[type="number"]', tr).value || 0;
+      const blocks = Math.round(totalBlocks * (pct/100));
+      $('[data-blocks]', tr).textContent = blocks;
+      return {name, pct, blocks};
+    });
+
+    const tops = rowsFrom(topBody,'Top');
+    const backs = rowsFrom(backBody,'Back');
+
     if (Math.abs(topPct - 100) > 0.5) {
       const tr = document.createElement('tr');
       tr.innerHTML = `<td colspan="4" class="warn">Top shares total ${topPct.toFixed(0)}%. Yardage uses those proportions anyway.</td>`;
       yBody.appendChild(tr);
     }
-
     tops.forEach(t => addYardageRow(`TOP — ${t.name}`, t.blocks, sqPerYardTop));
 
     if (Math.abs(backPct - 100) > 0.5) {
@@ -293,22 +416,40 @@
       tr.innerHTML = `<td colspan="4" class="warn">Backing shares total ${backPct.toFixed(0)}%. Yardage uses those proportions anyway.</td>`;
       yBody.appendChild(tr);
     }
-
     backs.forEach(b => addYardageRow(`BACK — ${b.name}`, b.blocks, sqPerYardTop));
 
-    if (useMid){
-      addYardageRow(`MIDDLE — ${midType}`, totalBlocks, sqPerYardMid);
-    }
+    if (useMid){ addYardageRow(`MIDDLE — ${midType}`, totalBlocks, sqPerYardMid); }
   }
+
+  function handlePresets(){
+    $$('.preset-bar [data-preset]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const [w,h]=btn.dataset.preset.split('x').map(Number);
+        $('#qWidth').value=w; $('#qHeight').value=h; recalc();
+      });
+    });
+  }
+
+  // theme toggle
+  const root = document.documentElement;
+  const savedTheme = localStorage.getItem('rq-theme');
+  if (savedTheme === 'dark') root.setAttribute('data-theme','dark');
+  $('#themeToggle').addEventListener('click', ()=>{
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    if (isDark) root.removeAttribute('data-theme'); else root.setAttribute('data-theme','dark');
+    localStorage.setItem('rq-theme', isDark ? 'light' : 'dark');
+  });
 
   // init
   resetTop();
   resetBack();
+  setFromQuery();
   updateShares();
   recalc();
+  handlePresets();
   $('#yr').textContent = new Date().getFullYear();
 
-  // live recalc on input changes (debounced)
+  // live recalc
   let t; const onChange = () => { clearTimeout(t); t = setTimeout(recalc, 120); };
   $$('#inputs input, #inputs select').forEach(el => el.addEventListener('input', onChange));
 </script>
